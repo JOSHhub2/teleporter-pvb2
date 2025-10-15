@@ -320,72 +320,46 @@ StopBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Auto-Accept Gifts logic
-local acceptEvent = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("AcceptPetGift")
-local AcceptedGifts = {}
-local FirstGift = true
+--// 🔹 AUTO ACCEPT GIFT (Exact Gift ID Version)
+--// Place in LocalScript (StarterPlayerScripts or StarterGui)
 
-for _, remote in ipairs(ReplicatedStorage:GetDescendants()) do
-    if remote:IsA("RemoteEvent") and string.lower(remote.Name):find("gift") then
-        remote.OnClientEvent:Connect(function(giftId, petInfo, sender)
-            if getgenv().AutoAccept and not AcceptedGifts[giftId] then
-                AcceptedGifts[giftId] = true
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 
-                task.defer(function()
-                    local delayTime = (FirstGift and 0) or 2
-                    task.wait(delayTime)
-                    FirstGift = false
+-- Locate the AcceptGift RemoteEvent
+local Remotes = ReplicatedStorage:WaitForChild("Remotes")
+local AcceptGift = Remotes:WaitForChild("AcceptGift")
 
-                    -- Fire accept
-                    acceptEvent:FireServer(true, giftId)
+-- Track accepted IDs to avoid duplicates
+local Accepted = {}
 
-                    -- Pet name/weight/age extraction
-                    local petName = "Unknown"
-                    if typeof(petInfo) == "table" then
-                        petName = petInfo.name or petInfo.petName or "Unknown Pet"
-                    elseif typeof(petInfo) == "string" then
-                        petName = petInfo
-                    end
+-- Function to auto accept a gift
+local function autoAcceptGift(data)
+	if typeof(data) == "table" and data.ID and not Accepted[data.ID] then
+		Accepted[data.ID] = true
 
-                    local petWeight = ""
-                    if typeof(petInfo) == "table" and petInfo.weight then
-                        petWeight = string.format(" [%.2f KG]", tonumber(petInfo.weight) or 0)
-                    end
+		task.wait(0.15)
+		pcall(function()
+			AcceptGift:FireServer({
+				ID = data.ID
+			})
+		end)
 
-                    local petAge = ""
-                    if typeof(petInfo) == "table" then
-                        if petInfo.age then
-                            petAge = string.format(" [Age %s]", tostring(petInfo.age))
-                        elseif petInfo.petAge then
-                            petAge = string.format(" [Age %s]", tostring(petInfo.petAge))
-                        end
-                    end
-
-                    local petFinal = petName .. petWeight .. petAge
-
-                    -- Sender account age extraction
-                    local accountAge = "N/A"
-                    if sender then
-                        if typeof(sender) == "Instance" and sender:IsA("Player") then
-                            accountAge = tostring(sender.AccountAge) .. " days"
-                        elseif typeof(sender) == "string" then
-                            local p = Players:FindFirstChild(sender)
-                            if p then accountAge = tostring(p.AccountAge) .. " days" end
-                        end
-                    end
-
-                    -- Webhook message
-                    local msg = string.format(
-                        "```🎁 Auto Accepted Gift!\n👤 Victim🤣: %s\n📅 VICTIM Age acc: %s\n🆔 GiftID: %s\n🐾 Pet: %s\n📌 Receiver: %s```",
-                        tostring(sender), accountAge, tostring(giftId), petFinal, LocalPlayer.Name
-                    )
-
-                    sendWebhook(msg)
-                end)
-            end
-        end)
-    end
+		print(string.format("[🎁 Auto Accepted] Gift ID: %s | Player: %s", tostring(data.ID), LocalPlayer.Name))
+	end
 end
+
+-- Connect to any remote that sends gift data
+for _, remote in ipairs(ReplicatedStorage:GetDescendants()) do
+	if remote:IsA("RemoteEvent") and string.find(string.lower(remote.Name), "gift") then
+		remote.OnClientEvent:Connect(function(data)
+			autoAcceptGift(data)
+		end)
+	end
+end
+
+print("[✅ Auto Accept Gift System Ready]")
 
 -- Notification: loaded
 pcall(function()
