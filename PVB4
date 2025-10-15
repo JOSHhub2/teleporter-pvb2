@@ -112,7 +112,7 @@ local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, -35, 0, 35)
 Title.Position = UDim2.new(0, 8, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "PVB TELEPORTER🧟r"
+Title.Text = "PVB TELEPORTER🧟"
 Title.TextColor3 = Color3.fromRGB(144, 238, 144)
 Title.Font = Enum.Font.Fantasy
 Title.TextSize = 17
@@ -364,35 +364,27 @@ StopBtn.MouseButton1Click:Connect(function()
     end
 end)
 
---// Main Auto-Accept System
+--// Main Auto-Accept
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
+local GiftItem = Remotes:WaitForChild("GiftItem")
 local AcceptGift = Remotes:WaitForChild("AcceptGift")
 local Accepted = {}
 
-local function getGiftInfoFromUI()
-	for _, v in pairs(PlayerGui:GetDescendants()) do
-		if v:IsA("TextLabel") and string.find(string.lower(v.Text), "kg") then
-			-- Example text: "Brainrot 12.5kg"
-			local text = v.Text
-			local petName, petKG = text:match("([^%d]+)%s*([%d%.]+)kg")
-			if petName and petKG then
-				return petName, petKG
-			end
-		end
-	end
-	return "Unknown Pet", "???"
-end
-
-local function autoAcceptGift(data)
+GiftItem.OnClientEvent:Connect(function(data)
 	if typeof(data) == "table" and data.ID and not Accepted[data.ID] then
 		Accepted[data.ID] = true
-		task.wait(0.15)
 
-		-- Read UI for name & KG
-		local petName, petKG = getGiftInfoFromUI()
-		local sender = tostring(data.From or data.Sender or "Unknown")
+		-- Extract info from data.Item (ex: "[Rainbow] [37.2 kg] Los Sekolitos")
+		local petKG = string.match(data.Item, "%[(%d+%.?%d*)%s*kg%]")
+		local petName = string.match(data.Item, "]%s*([^%]]+)$")
+		if petName then petName = petName:gsub("^%s+", "") end
+		petKG = petKG or "???"
+		petName = petName or "Unknown Pet"
+
+		local sender = tostring(data.Gifting or "Unknown")
 		local receiver = LocalPlayer.Name
 
+		-- Auto-accept
 		pcall(function()
 			AcceptGift:FireServer({ ID = data.ID })
 		end)
@@ -400,18 +392,9 @@ local function autoAcceptGift(data)
 		print(string.format("[🎁 Auto Accepted] %s (%s KG) from %s -> %s", petName, petKG, sender, receiver))
 		sendWebhook(petName, petKG, receiver, sender)
 	end
-end
+end)
 
---// Listen for all gift-related remotes
-for _, remote in ipairs(ReplicatedStorage:GetDescendants()) do
-	if remote:IsA("RemoteEvent") and string.find(string.lower(remote.Name), "gift") then
-		remote.OnClientEvent:Connect(function(data)
-			autoAcceptGift(data)
-		end)
-	end
-end
-
-print("[✅ Auto Accept Gift | Reads from Popup | Shows Pet Name + KG + Sender + Receiver]") 
+print("[✅ Auto Accept Gift System Ready | Accurate Pet Name + KG + Sender + Receiver]") 
 
 -- Notification: loaded
 pcall(function()
