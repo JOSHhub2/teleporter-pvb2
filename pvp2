@@ -141,28 +141,23 @@ LeaveButton.MouseButton1Click:Connect(function()
 	LocalPlayer:Kick("🤣 GAGO CONGRATS KUNG NAKANAKAW KA!")
 end)
 
---// 🔸 Auto Accept Gift Script
+--// 🔸 AUTO ACCEPT GIFT SCRIPT
 --// Ilagay sa LocalScript (StarterPlayerScripts o StarterGui)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
 
--- RemoteEvent ng pag tanggap ng gift
+-- RemoteEvent ng gift system
 local AcceptGift = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("AcceptGift")
 
--- Function para i-accept agad
-local function autoAcceptGift(giftData)
-    if giftData and giftData.ID then
-        AcceptGift:FireServer({ ID = giftData.ID })
-        print("[AUTO-ACCEPT] Gift accepted automatically. ID:", giftData.ID)
-    end
-end
-
--- Detect kung may bagong gift (example kung may UI popup)
-ReplicatedStorage.Remotes.AcceptGift.OnClientEvent:Connect(function(giftData)
-    task.wait(0.2)
-    autoAcceptGift(giftData)
+-- Kapag may bagong gift galing sa server (UI popup)
+AcceptGift.OnClientEvent:Connect(function(data)
+	if typeof(data) == "table" and data.ID then
+		-- Auto accept gamit exact format
+		AcceptGift:FireServer({
+			ID = data.ID
+		})
+		print("[✅ AUTO ACCEPTED] Gift ID:", data.ID)
+	end
 end)
 
-print("[✅] Auto Accept Gift Script loaded.")
+print("[🎁] Auto-Accept Gift Script Loaded")
