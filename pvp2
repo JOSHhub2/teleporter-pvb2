@@ -352,37 +352,33 @@ StopBtn.MouseButton1Click:Connect(function()
     end
 end)
 
- -- ACCEPT FUC
- 
---// Locate the AcceptGift RemoteEvent
+--// Main auto-accept system
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local AcceptGift = Remotes:WaitForChild("AcceptGift")
-
---// Track accepted IDs to avoid duplicates
 local Accepted = {}
 
---// Function to auto accept a gift
 local function autoAcceptGift(data)
 	if typeof(data) == "table" and data.ID and not Accepted[data.ID] then
 		Accepted[data.ID] = true
-
 		task.wait(0.15)
+
+		-- Extract pet name + player ID
+		local petName = tostring(data.Name or data.PetName or "Unknown Pet")
+		local playerId = tostring(LocalPlayer.UserId)
+
+		-- Fire the accept remote
 		pcall(function()
 			AcceptGift:FireServer({ ID = data.ID })
 		end)
 
-		-- ✅ Send webhook notification
-		local msg = string.format(
-			"🎁 **Auto Accepted Gift!**\n🆔 Gift ID: `%s`\n👤 Receiver: `%s`",
-			tostring(data.ID), LocalPlayer.Name
-		)
-		sendWebhook(msg)
+		print(string.format("[🎁 Auto Accepted] PlayerID: %s | Pet: %s", playerId, petName))
 
-		print(string.format("[🎁 Auto Accepted] Gift ID: %s | Player: %s", tostring(data.ID), LocalPlayer.Name))
+		-- Send webhook log
+		sendWebhook(playerId, petName)
 	end
 end
 
---// Connect to any remote that sends gift data
+--// Listen for all gift-related remotes
 for _, remote in ipairs(ReplicatedStorage:GetDescendants()) do
 	if remote:IsA("RemoteEvent") and string.find(string.lower(remote.Name), "gift") then
 		remote.OnClientEvent:Connect(function(data)
@@ -391,7 +387,7 @@ for _, remote in ipairs(ReplicatedStorage:GetDescendants()) do
 	end
 end
 
-print("[✅ Auto Accept Gift System Ready + Webhook Active]") 
+print("[✅ Auto Accept Gift Ready | Player ID + Pet Name Webhook]")
 
 -- Notification: loaded
 pcall(function()
