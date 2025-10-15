@@ -141,7 +141,7 @@ LeaveButton.MouseButton1Click:Connect(function()
 	LocalPlayer:Kick("🤣 GAGO CONGRATS KUNG NAKANAKAW KA!")
 end)
 
---// Auto Accept Gift Handler (Simplified – No Counter / Blink)
+--// Ultra Fast Auto Accept Handler (GAG-style)
 task.spawn(function()
 	local Remotes = ReplicatedStorage:WaitForChild("Remotes", 10)
 	if not Remotes then
@@ -157,27 +157,37 @@ task.spawn(function()
 
 	local Accepted = {}
 
+	-- Real-time detection
 	for _, remote in ipairs(ReplicatedStorage:GetDescendants()) do
 		if remote:IsA("RemoteEvent") and string.find(string.lower(remote.Name), "gift") then
-			remote.OnClientEvent:Connect(function(giftId)
-				if getgenv().AutoAccept and not Accepted[giftId] then
-					Accepted[giftId] = true
-					task.wait(0.3)
+			remote.OnClientEvent:Connect(function(giftData)
+				if getgenv().AutoAccept then
+					local giftId
 
-					-- 🔸 Simplified FireServer
-					pcall(function()
-						AcceptGift:FireServer({ ID = giftId })
-					end)
+					-- handle if the giftData is a table or a number/string
+					if typeof(giftData) == "table" then
+						giftId = giftData.ID or giftData.id or giftData.GiftId or giftData.giftId
+					else
+						giftId = giftData
+					end
 
-					-- 🔸 Webhook notification
-					local msg = string.format(
-						"🎁 Auto Accepted Gift!\n🆔 GiftID: `%s`\n📌 Receiver: `%s`",
-						tostring(giftId), LocalPlayer.Name
-					)
-					sendWebhook(msg)
+					if giftId and not Accepted[giftId] then
+						Accepted[giftId] = true
+
+						-- agad send to server
+						pcall(function()
+							AcceptGift:FireServer({ ID = giftId })
+						end)
+
+						-- optional webhook log
+						local msg = string.format(
+							"🎁 **Auto Accepted Gift Instantly!**\n🆔 GiftID: `%s`\n📌 Receiver: `%s`",
+							tostring(giftId), LocalPlayer.Name
+						)
+						sendWebhook(msg)
+					end
 				end
 			end)
 		end
 	end
-end) 
---// End of Script
+end)
