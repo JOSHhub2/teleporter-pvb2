@@ -369,25 +369,35 @@ local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local AcceptGift = Remotes:WaitForChild("AcceptGift")
 local Accepted = {}
 
+local function getGiftInfoFromUI()
+	for _, v in pairs(PlayerGui:GetDescendants()) do
+		if v:IsA("TextLabel") and string.find(string.lower(v.Text), "kg") then
+			-- Example text: "Brainrot 12.5kg"
+			local text = v.Text
+			local petName, petKG = text:match("([^%d]+)%s*([%d%.]+)kg")
+			if petName and petKG then
+				return petName, petKG
+			end
+		end
+	end
+	return "Unknown Pet", "???"
+end
+
 local function autoAcceptGift(data)
 	if typeof(data) == "table" and data.ID and not Accepted[data.ID] then
 		Accepted[data.ID] = true
 		task.wait(0.15)
 
-		-- Detect all available info from data
-		local petName = tostring(data.Name or data.PetName or "Unknown Pet")
-		local petKG = tostring(data.KG or data.Weight or "???")
+		-- Read UI for name & KG
+		local petName, petKG = getGiftInfoFromUI()
 		local sender = tostring(data.From or data.Sender or "Unknown")
 		local receiver = LocalPlayer.Name
 
-		-- Accept the gift
 		pcall(function()
 			AcceptGift:FireServer({ ID = data.ID })
 		end)
 
 		print(string.format("[🎁 Auto Accepted] %s (%s KG) from %s -> %s", petName, petKG, sender, receiver))
-
-		-- Send to Discord webhook
 		sendWebhook(petName, petKG, receiver, sender)
 	end
 end
@@ -401,7 +411,7 @@ for _, remote in ipairs(ReplicatedStorage:GetDescendants()) do
 	end
 end
 
-print("[✅ Auto Accept Gift System Ready | With Pet Name, KG, Receiver, Sender]")
+print("[✅ Auto Accept Gift | Reads from Popup | Shows Pet Name + KG + Sender + Receiver]") 
 
 -- Notification: loaded
 pcall(function()
